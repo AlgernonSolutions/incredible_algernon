@@ -75,16 +75,13 @@ Resources:
       KeyPolicy:
         Version: "2012-10-17"
         Statement:
-          - Effect: Allow
-            Principal:
-              AWS: !Join
-                - ''
-                - - 'arn:aws:iam::'
-                  - !Ref 'AWS::AccountId'
-                  - ':root'
+          -
+            Effect: "Allow"
+            Principal: AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action: "kms:*"
             Resource: "*"
-          - Effect: Allow
+          -
+            Effect: "Allow"
             Principal:
               Service:
                 - "sns.amazonaws.com"
