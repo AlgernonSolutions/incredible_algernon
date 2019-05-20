@@ -81,8 +81,7 @@ Resources:
                 - - 'arn:aws:iam::'
                   - !Ref 'AWS::AccountId'
                   - ':root'
-            Action:
-              - "kms:*"
+            Action: "kms:*"
             Resource: "*"
           - Effect: Allow
             Principal:
