@@ -21,7 +21,8 @@ Globals:
       - !Ref LayerArn
     Environment:
       Variables:
-        CREDIBLE_MANAGER_ARN: !Ref Listener
+        LISTENER_ARN: !Ref Listener
+        LEECH_LISTENER_ARN: !ImportValue leech-dev-leech-listener
         STORAGE_BUCKET: !Ref StorageBucket
 Resources:
   Task:
