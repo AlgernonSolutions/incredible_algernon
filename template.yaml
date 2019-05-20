@@ -79,8 +79,8 @@ Resources:
               AWS: !Join
                 - ''
                 - - 'arn:aws:iam::'
-                - !Ref 'AWS::AccountId'
-                - ':root'
+                  - !Ref 'AWS::AccountId'
+                  - ':root'
               Action: "kms:*"
               Resource: "*"
           - Effect: Allow
