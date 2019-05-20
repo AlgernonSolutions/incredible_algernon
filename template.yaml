@@ -75,12 +75,12 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
-              Principal:
-                AWS: !Join
-                  - ''
-                  - - 'arn:aws:iam::'
-                  - !Ref 'AWS::AccountId'
-                  - ':root'
+            Principal:
+              AWS: !Join
+                - ''
+                - - 'arn:aws:iam::'
+                - !Ref 'AWS::AccountId'
+                - ':root'
               Action: "kms:*"
               Resource: "*"
           - Effect: Allow
