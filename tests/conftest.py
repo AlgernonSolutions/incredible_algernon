@@ -33,6 +33,16 @@ def dev_s3_resource():
 
 
 @pytest.fixture
+def dev_sns_resource():
+    dynamo_patch = patch('algernon.aws.bullhorn.boto3.client')
+    mock_dynamo = dynamo_patch.start()
+    import boto3
+    mock_dynamo.return_value = boto3.Session(profile_name='dev').client('sns')
+    yield mock_dynamo
+    mock_dynamo.stop()
+
+
+@pytest.fixture
 def mock_sqs_event():
     return _read_test_event('test_sqs_event')
 
