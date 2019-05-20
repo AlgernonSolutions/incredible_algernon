@@ -1,7 +1,7 @@
 import logging
 
 import requests
-from algernon import queued
+from algernon import queued, ajson
 from algernon.aws import lambda_logged
 
 from toll_booth.obj.credible_fe import CredibleFrontEndDriver, CredibleLoginCredentials
@@ -37,4 +37,4 @@ def task(event, context):
         CredibleTasks.push_credentials(id_source=id_source, credentials=driver.credentials)
     results = task_function(*task_args, **task_kwargs, driver=driver)
     logging.info(f'completed a call for a credible task, event: {event}, results: {results}')
-    return results
+    return ajson.dumps(results)
