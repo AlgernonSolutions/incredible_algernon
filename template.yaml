@@ -28,6 +28,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth.tasks.handler
+      Role: !ImportValue dev-worker-role-arn
       ReservedConcurrentExecutions: 1
       Events:
         Queue:
@@ -92,7 +93,6 @@ Resources:
               - "kms:GenerateDataKey*"
               - "kms:Decrypt"
             Resource: "*"
-
   DeadLetter:
     Type: AWS::SQS::Queue
     Properties:
