@@ -1,0 +1,42 @@
+{
+  "task_name": "get_encounter",
+  "task_kwargs": {
+    "encounter_id": {
+      "_alg_class": "decimal",
+      "value": "146856"
+    },
+    "encounter_datetime_in": {
+      "_alg_class": "datetime",
+      "value": {
+        "tz": null,
+        "timestamp": 1426098600.0
+      }
+    },
+    "encounter_datetime_out": {
+      "_alg_class": "datetime",
+      "value": {
+        "tz": null,
+        "timestamp": 1426102200.0
+      }
+    },
+    "patient_id": {
+      "_alg_class": "decimal",
+      "value": "1013613"
+    },
+    "provider_id": {
+      "_alg_class": "decimal",
+      "value": "7332"
+    },
+    "encounter_type": "Community Support",
+    "id_source": "PSI",
+    "patient_last_name": "DOE",
+    "patient_first_name": "JOHN",
+    "patient_dob": {
+      "_alg_class": "datetime",
+      "value": {
+        "tz": null,
+        "timestamp": 154847800.0
+      }
+    }
+  }
+}

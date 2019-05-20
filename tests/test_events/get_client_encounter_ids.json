@@ -1,0 +1,19 @@
+{
+  "task_name": "get_client_encounter_ids",
+  "task_kwargs": {
+    "patient_id": {
+      "_alg_class": "decimal",
+      "value": "1013613"
+    },
+    "patient_first_name": "JOHN",
+    "patient_last_name": "DOE",
+    "patient_dob": {
+      "_alg_class": "datetime",
+      "value": {
+        "tz": null,
+        "timestamp": 154847800.0
+      }
+    },
+    "id_source": "PSI"
+  }
+}
