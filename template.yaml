@@ -15,7 +15,6 @@ Globals:
   Function:
     Runtime: python3.6
     Timeout: 300
-    CodeUri: ./src/toll_booth/
     Tracing: Active
     Layers:
       - !Ref LayerArn
@@ -31,6 +30,7 @@ Resources:
       Handler: toll_booth.tasks.handler
       Role: !ImportValue dev-worker-role-arn
       ReservedConcurrentExecutions: 1
+      CodeUri: ./src/
       Events:
         Queue:
           Type: SQS
