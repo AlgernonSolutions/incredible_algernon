@@ -15,7 +15,7 @@ Globals:
   Function:
     Runtime: python3.6
     Timeout: 300
-    CodeUri: src/
+    CodeUri: ./src/
     Tracing: Active
     Layers:
       - !Ref LayerArn
