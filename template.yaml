@@ -86,7 +86,7 @@ Resources:
           - Effect: Allow
             Principal:
               AWS: !Join
-                - ''
+                - '/'
                 - - 'arn:aws:iam::'
                   - !Ref 'AWS::AccountId'
                   - ':root'
