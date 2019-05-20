@@ -77,7 +77,8 @@ Resources:
         Statement:
           -
             Effect: "Allow"
-            Principal: AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action: "kms:*"
             Resource: "*"
           -
