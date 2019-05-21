@@ -51,7 +51,7 @@ class CredibleTasks:
             },
             'patient_data': {
                 'last_name': kwargs['patient_last_name'],
-                'first_name': kwargs['patient_last_name'],
+                'first_name': kwargs['patient_first_name'],
                 'dob': kwargs['patient_dob']
             }
         }
