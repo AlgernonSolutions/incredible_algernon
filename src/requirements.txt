@@ -1,0 +1,5 @@
+retrying
+pytz
+bs4
+requests
+moncrief>=2.0.0

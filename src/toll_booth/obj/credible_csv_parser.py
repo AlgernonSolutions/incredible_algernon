@@ -30,8 +30,8 @@ class CredibleCsvParser:
             response = {}
         header = []
         first = True
-        with io.StringIO(csv_string, newline='\r\n') as csv_string:
-            reader = csv.reader(csv_string, delimiter=',', quotechar='"')
+        with io.StringIO(csv_string, newline='\r\n') as csv_io:
+            reader = csv.reader(csv_io, delimiter=',', quotechar='"')
             for row in reader:
                 header_index = 0
                 row_entry = {}
@@ -45,7 +45,9 @@ class CredibleCsvParser:
                         header_name = header[header_index]
                     except IndexError:
                         raise RuntimeError(
-                            'the returned data from a csv query contained insufficient information to create the table')
+                            f'the returned data from a csv query contained '
+                            f'insufficient information to create the table,'
+                            f' returned data: {csv_string}')
                     entry = cls._set_data_type(header_name, entry)
                     row_entry[header_name] = entry
                     header_index += 1

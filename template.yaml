@@ -3,6 +3,12 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   functionality related to the Credible Behavioral Health Software platform
 Parameters:
+  IsDev:
+    Type: String
+    Default: 'False'
+    AllowedValues:
+      - 'False'
+      - 'True'
   StorageBucket:
     Type: String
     Description: Location to store extracted Credible data
@@ -11,98 +17,43 @@ Parameters:
     Type: String
     Description: the lambda layer containing the common dependencies
     Default: 'arn:aws:lambda:us-east-1:726075243133:layer:algLayer:3'
-Globals:
-  Function:
-    Runtime: python3.6
-    Timeout: 300
-    CodeUri: ./
-    Tracing: Active
-    Layers:
-      - !Ref LayerArn
-    Environment:
-      Variables:
-        CREDIBLE_MANAGER_ARN: !Ref Listener
-        STORAGE_BUCKET: !Ref StorageBucket
+Conditions:
+  DevDeploy: !Equals [!Ref IsDev, 'True']
+  ProdDeploy: !Equals [!Ref IsDev, 'False']
+
 Resources:
   Task:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth.tasks.handler
+      Role: !ImportValue dev-worker-role-arn
       ReservedConcurrentExecutions: 1
-      Events:
-        Queue:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt EventQueue.Arn
-            BatchSize: 10
-  Listener:
-    Type: AWS::SNS::Topic
+      CodeUri: src/
+      Timeout: 600
+      Runtime: python3.7
+      Tracing: Active
+      Environment:
+        Variables:
+          STORAGE_BUCKET: !Ref StorageBucket
+  Oyster:
+    Type: AWS::Serverless::Application
     Properties:
-      DisplayName: state-listener
-      KmsMasterKeyId: alias/aws/sns
-      Subscription:
-        - Endpoint: !GetAtt EventQueue.Arn
-          Protocol: sqs
-  EventQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      VisibilityTimeout: 300
-      RedrivePolicy:
-        deadLetterTargetArn:
-          !GetAtt DeadLetter.Arn
-        maxReceiveCount: 50
-      KmsMasterKeyId: !Ref MasterKey
-  QueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      PolicyDocument:
-        Version: "2012-10-17"
-        Id: "CredibleSqsPolicy"
-        Statement:
-          - Effect: Allow
-            Principal: "*"
-            Action: "SQS:SendMessage"
-            Resource: !GetAtt EventQueue.Arn
-            Condition:
-              ArnEquals:
-                aws:SourceArn: !Ref Listener
-      Queues:
-        - !Ref EventQueue
-  MasterKey:
-    Type: AWS::KMS::Key
-    Properties:
-      KeyPolicy:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - "sns.amazonaws.com"
-                - "lambda.amazonaws.com"
-            Action:
-              - "kms:GenerateDataKey*"
-              - "kms:Decrypt"
-            Resource: "*"
-          - Effect: Allow
-            Principal:
-              AWS: !Join
-                - ''
-                - - 'arn:aws:iam::'
-                  - !Ref 'AWS::AccountId'
-                  - ':root'
-            Action:
-              - "kms:*"
-            Resource: "*"
-  DeadLetter:
-    Type: AWS::SQS::Queue
-    Properties:
-      KmsMasterKeyId: alias/aws/sqs
-      MessageRetentionPeriod: 1209600
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:us-east-1:726075243133:applications/AlgernonOyster
+        SemanticVersion: 0.0.45
+      Parameters:
+        IsDev: !Ref IsDev
+        OysterBedEndpoint: 'mh5syterirdvzji7tdbrrmpe7m.appsync-api.us-east-1.amazonaws.com'
+        LambdaRoleArn: 'arn:aws:iam::726075243133:role/worker-leech-dev-2-Oyster-168YECYUUDQMK'
+        TaskFunctionArn: !GetAtt Task.Arn
+        ReservedConcurrency: 1
+        TaskName: "credible_tasks"
 
 Outputs:
   CredibleFunction:
     Description: "Hello World Lambda Function ARN"
     Value: !GetAtt Task.Arn
   ListenerArn:
-    Description: "the ARN endpoint for the task module"
-    Value: !Ref Listener
+    Value: !GetAtt Oyster.Outputs.ShuckLineListener
+    Export:
+      Name: !Sub "${AWS::StackName}-incredible-listener"

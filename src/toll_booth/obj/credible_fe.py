@@ -156,6 +156,9 @@ class CredibleLoginCredentials(AlgObject):
             return True
         return False
 
+    def __str__(self):
+        return self._cookie_value
+
 
 class CredibleFrontEndDriver:
     _monitor_extract_stems = {
@@ -220,7 +223,9 @@ class CredibleFrontEndDriver:
             data['start_date'] = start_date.strftime(credible_date_format)
         if end_date:
             data['end_date'] = end_date.strftime(credible_date_format)
+        logging.info(f'firing a command to url: {url} to process an advanced search: {data}')
         response = self._session.post(url, data=data)
+        logging.info(f'received a response a command to url: {url} with data: {data}, response: {response.content}')
         possible_objects = CredibleCsvParser.parse_csv_response(response.text)
         return possible_objects
 

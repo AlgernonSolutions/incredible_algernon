@@ -1,12 +1,11 @@
-import logging
 import os
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Tuple, Dict
+from typing import Any, Dict
 
 import boto3
-from algernon.aws import Bullhorn
 from algernon import ajson
+from algernon.aws import Bullhorn
 from botocore.exceptions import ClientError
 
 from toll_booth.obj.credible_fe import CredibleFrontEndDriver
@@ -49,22 +48,24 @@ class CredibleTasks:
                 'encounter_datetime_out': encounter_datetime_out,
                 'encounter_type': encounter_type
             },
-            'patient_data': {
+            'patient_data': [{
                 'last_name': kwargs['patient_last_name'],
-                'first_name': kwargs['patient_last_name'],
+                'first_name': kwargs['patient_first_name'],
                 'dob': kwargs['patient_dob']
-            }
+            }]
         }
         message = {
             'task_name': 'leech',
             'task_kwargs': {
                 'object_type': 'Encounter',
                 'extracted_data': encounter_data
-            }
+            },
+            'flow_id': f'{kwargs["flow_id"]}#leech'
         }
-        bullhorn = Bullhorn()
+        bullhorn = Bullhorn.retrieve()
+        listener_arn = bullhorn.find_task_arn('leech')
         strung_event = ajson.dumps(message)
-        bullhorn.publish('new_event', os.environ['LEECH_LISTENER_ARN'], strung_event)
+        bullhorn.publish('new_event', listener_arn, strung_event)
         return encounter_data
 
     @staticmethod
@@ -84,16 +85,14 @@ class CredibleTasks:
             'data_dict_ids': [3, 4, 6, 70, 74, 83, 86, 87]
         }
         driver = kwargs['driver']
-        try:
-            results = driver.process_advanced_search('ClientVisit', encounter_search_data)
-        except RuntimeError as e:
-            logging.error(f'runtime error retrieving values for patient_id: {patient_id}: {e}')
-            results = []
+        results = driver.process_advanced_search('ClientVisit', encounter_search_data)
         encounters = []
-        bullhorn = Bullhorn()
+        bullhorn = Bullhorn.retrieve()
+        next_task_name = 'get_encounter'
         for encounter in results:
+            encounter_id = encounter['Service ID']
             encounter_data = {
-                'encounter_id': encounter['Service ID'],
+                'encounter_id': encounter_id,
                 'encounter_datetime_in': encounter['Time In'],
                 'encounter_datetime_out': encounter['Time Out'],
                 'patient_id': patient_id,
@@ -106,11 +105,13 @@ class CredibleTasks:
             }
             encounters.append(encounter_data)
             new_task = {
-                'task_name': 'get_encounter',
+                'task_name': next_task_name,
+                'flow_id': f'{kwargs["flow_id"]}#{next_task_name}-{encounter_id}',
                 'task_kwargs': encounter_data
             }
             strung_event = ajson.dumps(new_task)
-            bullhorn.publish('new_event', os.environ['LISTENER_ARN'], strung_event)
+            listener_arn = bullhorn.find_task_arn('credible_tasks')
+            bullhorn.publish('new_event', listener_arn, strung_event)
         return encounters
 
     @staticmethod
@@ -130,12 +131,15 @@ class CredibleTasks:
         driver = kwargs['driver']
         results = driver.process_advanced_search('Clients', client_search_data)
         client_ids = [x[' Id'] for x in results]
-        bullhorn = Bullhorn()
+        bullhorn = Bullhorn.retrieve()
+        next_task_name = 'get_client_encounter_ids'
         for entry in results:
+            patient_id = entry[' Id']
             new_task = {
-                'task_name': 'get_client_encounter_ids',
+                'task_name': next_task_name,
+                'flow_id': f'{kwargs["flow_id"]}#{next_task_name}-{patient_id}',
                 'task_kwargs': {
-                    'patient_id': entry[' Id'],
+                    'patient_id': patient_id,
                     'patient_first_name': entry['First Name'],
                     'patient_last_name': entry['Last Name'],
                     'patient_dob': entry['DOB'],
@@ -143,7 +147,8 @@ class CredibleTasks:
                 }
             }
             strung_task = ajson.dumps(new_task)
-            bullhorn.publish('new_event', os.environ['LISTENER_ARN'], strung_task)
+            listener_arn = bullhorn.find_task_arn('credible_tasks')
+            bullhorn.publish('new_event', listener_arn, strung_task)
         return client_ids
 
 

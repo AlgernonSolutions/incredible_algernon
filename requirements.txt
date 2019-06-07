@@ -1,4 +1,0 @@
-retrying
-pytz
-bs4
-requests

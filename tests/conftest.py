@@ -8,6 +8,12 @@ from unittest.mock import patch
 import rapidjson
 
 
+@pytest.fixture()
+def integration_env():
+    os.environ['STORAGE_BUCKET'] = 'algernonsolutions-gentlemen-dev'
+    os.environ['LISTENER_ARN'] = 'arn:aws:sns:us-east-1:726075243133:incredible-dev-Oyster-12S3XT8CQA6Z3-ShuckLine-6SYM0TGYEMPK-Listener-4GMTVAEB2Q7M'
+
+
 @pytest.fixture(autouse=True)
 def test_environment(**kwargs):
     os.environ['STORAGE_BUCKET'] = kwargs.get('storage_bucket', 'algernonsolutions-gentlemen-dev')
