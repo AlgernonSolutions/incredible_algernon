@@ -1,6 +1,6 @@
 import pytest
 
-from toll_booth.tasks import handler
+from toll_booth import handler
 
 
 @pytest.mark.credible_tasks

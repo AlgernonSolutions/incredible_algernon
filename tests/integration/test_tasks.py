@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from toll_booth.tasks import handler
+from toll_booth import handler
 from algernon import ajson
 
 
