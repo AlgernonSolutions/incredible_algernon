@@ -5,7 +5,6 @@ import requests
 from algernon import AlgObject, ajson
 from algernon.aws import Opossum
 from requests import cookies
-from retrying import retry
 
 from toll_booth.obj.credible_csv_parser import CredibleCsvParser
 
@@ -86,7 +85,7 @@ class CredibleLoginCredentials(AlgObject):
                 first_payload = {'UserName': username,
                                  'Password': password,
                                  'DomainName': domain_name}
-                headers = {'DomainName': domain_name}
+                headers = {'DomainName': domain_name, 'origin': 'https://login.crediblebh.com'}
                 post = session.post(api_url, json=first_payload, headers=headers)
                 response_json = post.json()
                 session_cookie = response_json['SessionCookie']
@@ -128,7 +127,7 @@ class CredibleLoginCredentials(AlgObject):
     def destroy(self, session=None):
         if not session:
             session = requests.Session()
-        logout_url = 'https://ww7.crediblebh.com/secure/logout.aspx'
+        logout_url = 'https://www.crediblebh.com/secure/logout.aspx'
         session.get(
             logout_url,
             cookies=self.as_request_cookie_jar
@@ -203,6 +202,10 @@ class CredibleFrontEndDriver:
         return True
 
     @property
+    def id_source(self):
+        return self._id_source
+
+    @property
     def credentials(self):
         return self._credentials
 
@@ -229,7 +232,6 @@ class CredibleFrontEndDriver:
         possible_objects = CredibleCsvParser.parse_csv_response(response.text)
         return possible_objects
 
-    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
     @_login_required
     def retrieve_client_encounter(self, encounter_id):
         url = _base_stem + _url_stems['Encounter']

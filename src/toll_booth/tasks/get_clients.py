@@ -2,7 +2,8 @@ from aws_xray_sdk.core import xray_recorder
 
 
 @xray_recorder.capture()
-def get_client_ids(driver, **kwargs):
+def get_clients(**kwargs):
+    driver = kwargs['driver']
     client_search_data = {
         'teams': 1,
         'client_id': 1,
@@ -15,4 +16,4 @@ def get_client_ids(driver, **kwargs):
         'client_status_f': 'ALL ACTIVE'
     }
     results = driver.process_advanced_search('Clients', client_search_data)
-    return results
+    return {'patients': results, 'id_source': driver.id_source}

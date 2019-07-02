@@ -2,12 +2,34 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict, Any
 
-from algernon.aws import Bullhorn
 from algernon import ajson
+from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.obj.credible_fe import CredibleFrontEndDriver
 
 
+@xray_recorder.capture()
+def get_encounter_text(encounter_id: str,
+                       driver: CredibleFrontEndDriver,
+                       next_task_name: str = None,
+                       **kwargs):
+    encounter_text = driver.retrieve_client_encounter(encounter_id)
+    if next_task_name:
+        bullhorn = kwargs['bullhorn']
+        topic_arn = bullhorn.find_task_arn(next_task_name)
+        msg = {
+            'task_name': next_task_name,
+            'task_kwargs': {
+                'id_source': kwargs.get('id_source'),
+                'encounter_id': encounter_id,
+                'documentation': encounter_text
+            }
+        }
+        bullhorn.publish('new_event', topic_arn, ajson.dumps(msg))
+    return encounter_text
+
+
+@xray_recorder.capture()
 def get_encounter(driver: CredibleFrontEndDriver,
                   encounter_id: str,
                   id_source: str,
@@ -43,7 +65,7 @@ def get_encounter(driver: CredibleFrontEndDriver,
             'extracted_data': encounter_data
         }
     }
-    bullhorn = Bullhorn.retrieve()
+    bullhorn = kwargs['bullhorn']
     listener_arn = bullhorn.find_task_arn(next_task_name)
     strung_event = ajson.dumps(message)
     bullhorn.publish('new_event', listener_arn, strung_event)

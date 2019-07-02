@@ -16,5 +16,8 @@
         --template .aws-sam\build\templated.yaml ^
         --stack-name incredible-dev ^
         --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM ^
+        --parameter-overrides ^
+            LeechBucket=algernonsolutions-leech-dev ^
+            AlgernonBucket=algernonsolutions-leech-dev ^
         --force-upload
 )
