@@ -9,10 +9,11 @@ from botocore.exceptions import ClientError
 
 from algernon import ajson
 
-from toll_booth.obj.credible_fe import CredibleFrontEndDriver, CredibleLoginCredentials
+from toll_booth.obj.credible_fe import CredibleFrontEndDriver
+from toll_booth.obj.credible_fe_credentials import CredibleLoginCredentials
 
 
-# @xray_recorder.capture()
+@xray_recorder.capture()
 def build_driver(id_source, existing_credentials=None):
     if not existing_credentials:
         existing_credentials = _get_credentials(id_source)
@@ -26,22 +27,22 @@ def build_driver(id_source, existing_credentials=None):
     return driver
 
 
-# @xray_recorder.capture()
-def _construct_driver(id_source, existing_credentials):
-    session = requests.session()
+@xray_recorder.capture()
+def _construct_driver(id_source, existing_credentials: CredibleLoginCredentials):
     if not existing_credentials:
         logging.info(f'no existing credentials, retrieving new ones')
-        return CredibleFrontEndDriver(id_source, credentials=existing_credentials, session=session)
-    if not existing_credentials.validate(session=session):
+        return CredibleFrontEndDriver(id_source, credentials=existing_credentials)
+    if not existing_credentials.validate():
+        session = requests.session()
         logging.info(f'existing credentials are currently invalid, retrieving new ones')
         new_credentials = CredibleLoginCredentials.retrieve(id_source, session=session)
         logging.debug(f'retrieved new credentials')
-        return CredibleFrontEndDriver(id_source, credentials=new_credentials, session=session)
+        return CredibleFrontEndDriver(id_source, credentials=new_credentials)
     logging.debug(f'existing credentials are valid, no need to retrieve new ones')
-    return CredibleFrontEndDriver(id_source, credentials=existing_credentials, session=session)
+    return CredibleFrontEndDriver(id_source, credentials=existing_credentials)
 
 
-# @xray_recorder.capture()
+@xray_recorder.capture()
 def _get_credentials(id_source):
     try:
         credentials = _download_object(os.environ['STORAGE_BUCKET'], id_source, 'credentials')
@@ -50,20 +51,20 @@ def _get_credentials(id_source):
     return credentials
 
 
-# @xray_recorder.capture()
+@xray_recorder.capture()
 def _push_credentials(**kwargs):
     id_source = kwargs['id_source']
     _upload_object(os.environ['STORAGE_BUCKET'], id_source, 'credentials', kwargs['credentials'])
 
 
-# @xray_recorder.capture()
+@xray_recorder.capture()
 def _upload_object(bucket_name: str, folder_name: str, object_name: str, obj: Any):
     resource = boto3.resource('s3')
     object_key = f'{folder_name}/{object_name}'
     resource.Object(bucket_name, object_key).put(Body=ajson.dumps(obj))
 
 
-# @xray_recorder.capture()
+@xray_recorder.capture()
 def _download_object(bucket_name: str, folder_name: str, object_name: str) -> Any:
     resource = boto3.resource('s3')
     object_key = f'{folder_name}/{object_name}'

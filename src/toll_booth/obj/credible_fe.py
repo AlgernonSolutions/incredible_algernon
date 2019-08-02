@@ -1,14 +1,11 @@
-import datetime
 import logging
 
 import requests
-from algernon import AlgObject, ajson
-from algernon.aws import Opossum
-from requests import cookies
+from algernon import ajson
 
 from toll_booth.obj.credible_csv_parser import CredibleCsvParser
+from toll_booth.obj.credible_fe_credentials import CredibleLoginCredentials
 
-_base_stem = 'https://www.crediblebh.com'
 _url_stems = {
     'Clients': '/client/client_hipaalog.asp',
     'Employees': '/employee/emp_hipaalog.asp',
@@ -31,134 +28,6 @@ def _login_required(function):
     return wrapper
 
 
-class CredibleFrontEndLoginException(Exception):
-    pass
-
-
-class CredibleLoginCredentials(AlgObject):
-    def __init__(self, id_source, domain_name, cookie_value, time_generated):
-        self._id_source = id_source
-        self._domain_name = domain_name
-        self._cookie_value = cookie_value
-        self._time_generated = time_generated
-
-    @property
-    def domain_name(self):
-        return self._domain_name
-
-    @property
-    def cookie_value(self):
-        return self._cookie_value
-
-    @property
-    def time_generated(self):
-        return self._time_generated
-
-    @property
-    def as_request_cookie_jar(self):
-        cookie_jar = requests.cookies.RequestsCookieJar()
-        cookie_args = {
-            'name': 'cbh',
-            'value': self._cookie_value,
-            'domain': '.crediblebh.com'
-        }
-        credible_cookie = requests.cookies.create_cookie(**cookie_args)
-        cookie_jar.set_cookie(credible_cookie)
-        return cookie_jar
-
-    @classmethod
-    def retrieve(cls, id_source, session=None, username=None, password=None, domain_name=None):
-        time_generated = datetime.datetime.now()
-        if not session:
-            session = requests.Session()
-        if not username or not password:
-            credentials = Opossum.get_untrustworthy_credentials(id_source)
-            username = credentials['username']
-            password = credentials['password']
-            domain_name = credentials['domain_name']
-        attempts = 0
-        while attempts < 3:
-            try:
-                jar = cookies.RequestsCookieJar()
-                api_url = "https://login-api.crediblebh.com/api/Authenticate/CheckLogin"
-                index_url = "https://ww7.crediblebh.com/index.aspx"
-                first_payload = {'UserName': username,
-                                 'Password': password,
-                                 'DomainName': domain_name}
-                headers = {'DomainName': domain_name, 'origin': 'https://login.crediblebh.com'}
-                post = session.post(api_url, json=first_payload, headers=headers)
-                response_json = post.json()
-                session_cookie = response_json['SessionCookie']
-                jar.set('SessionId', session_cookie, domain='.crediblebh.com', path='/')
-                second_payload = {'SessionId': session_cookie}
-                second_post = session.post(index_url, data=second_payload, cookies=jar)
-                history = second_post.history
-                cbh_response = history[0]
-                cbh_cookies = cbh_response.cookies
-                session.cookies = cbh_cookies
-                cookie_values = getattr(cbh_cookies, '_cookies')
-                credible_value = cookie_values['.crediblebh.com']['/']['cbh'].value
-                return cls(id_source, domain_name, credible_value, time_generated)
-            except KeyError or ConnectionError:
-                attempts += 1
-        raise CredibleFrontEndLoginException()
-
-    @classmethod
-    def parse_json(cls, json_dict):
-        return cls(
-            json_dict['id_source'], json_dict['domain_name'],
-            json_dict['cookie_value'], json_dict['time_generated']
-        )
-
-    def is_stale(self, lifetime_minutes=30):
-        cookie_age = (datetime.datetime.now() - self._time_generated).seconds
-        return cookie_age >= (lifetime_minutes * 60)
-
-    def refresh_if_stale(self, lifetime_minutes=30, **kwargs):
-        if self.is_stale(lifetime_minutes):
-            self.refresh(**kwargs)
-            return True
-        return False
-
-    def refresh(self, session=None, username=None, password=None):
-        new_credentials = self.retrieve(self._id_source, session, username, password)
-        self._cookie_value = new_credentials.cookie_value
-
-    def destroy(self, session=None):
-        if not session:
-            session = requests.Session()
-        logout_url = 'https://www.crediblebh.com/secure/logout.aspx'
-        session.get(
-            logout_url,
-            cookies=self.as_request_cookie_jar
-        )
-
-    def validate(self, session=None):
-        validation_url = 'https://www.crediblebh.com'
-        if not session:
-            session = requests.session()
-        session.cookies = self.as_request_cookie_jar
-        test_get = session.get(validation_url)
-        request_history = test_get.history
-        for response in request_history:
-            if response.is_redirect:
-                redirect = response.headers['Location']
-                if '/secure/login.asp' in redirect:
-                    return False
-        return True
-
-    def refresh_if_invalid(self, session=None, **kwargs):
-        if not session:
-            session = requests.session()
-        if not self.validate(session):
-            self.refresh(**kwargs)
-            return True
-        return False
-
-    def __str__(self):
-        return self._cookie_value
-
-
 class CredibleFrontEndDriver:
     _monitor_extract_stems = {
         'Employees': '/employee/list_emps_adv.asp',
@@ -176,15 +45,13 @@ class CredibleFrontEndDriver:
         'by_emp_id': 'number'
     }
 
-    def __init__(self, id_source, session=None, credentials=None):
-        if not session:
-            session = requests.Session()
+    def __init__(self, id_source, credentials=None):
         if not credentials:
-            credentials = CredibleLoginCredentials.retrieve(id_source, session=session)
+            credentials = CredibleLoginCredentials.retrieve(id_source)
         self._id_source = id_source
-        session.cookies = credentials.as_request_cookie_jar
-        self._session = session
+        self._session = credentials.authenticated_session
         self._credentials = credentials
+        self._base_stem = credentials.site_url
 
     def __enter__(self):
         session = requests.Session()
@@ -196,7 +63,7 @@ class CredibleFrontEndDriver:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._credentials.destroy(self._session)
+        self._credentials.destroy()
         if exc_type:
             raise exc_val
         return True
@@ -216,7 +83,7 @@ class CredibleFrontEndDriver:
     @_login_required
     def process_advanced_search(self, id_type, selected_fields, start_date=None, end_date=None):
         credible_date_format = '%m/%d/%Y'
-        url = _base_stem + self._monitor_extract_stems[id_type]
+        url = self._base_stem + self._monitor_extract_stems[id_type]
         data = {
             'submitform': 'true',
             'btn_export': ' Export ',
@@ -234,7 +101,7 @@ class CredibleFrontEndDriver:
 
     @_login_required
     def retrieve_client_encounter(self, encounter_id):
-        url = _base_stem + _url_stems['Encounter']
+        url = self._base_stem + _url_stems['Encounter']
         response = self._session.get(url, data={'clientvisit_id': encounter_id})
         if response.status_code != 200:
             raise RuntimeError(f'could not get the encounter data for {encounter_id}, '
@@ -246,7 +113,7 @@ class CredibleFrontEndDriver:
 
     @_login_required
     def retrieve_client_encounters(self, encounter_ids):
-        url = _base_stem + '/visit/clientvisit_viewall.asp'
+        url = self._base_stem + '/visit/clientvisit_viewall.asp'
         response = self._session.get(url, data={'clientvisit_ids': encounter_ids})
         if response.status_code != 200:
             raise RuntimeError(f'could not get the encounter data for {encounter_ids}, '
@@ -258,7 +125,7 @@ class CredibleFrontEndDriver:
 
     @_login_required
     def retrieve_client_encounter_version(self, encounter_id, version_id):
-        url = _base_stem + _url_stems['ViewVersions']
+        url = self._base_stem + _url_stems['ViewVersions']
         data = {
             'visitdocversion_id': str(version_id),
             'clientvisit_id': str(encounter_id)
@@ -271,7 +138,7 @@ class CredibleFrontEndDriver:
 
     @_login_required
     def retrieve_documentation_versions(self, encounter_id):
-        url = _base_stem + _url_stems['Versions']
+        url = self._base_stem + _url_stems['Versions']
         response = self._session.post(url, data={'clientvisit_id': encounter_id})
         if response.status_code != 200:
             raise RuntimeError(f'could not get the version data for {encounter_id}, response code: {response.status_code}')
