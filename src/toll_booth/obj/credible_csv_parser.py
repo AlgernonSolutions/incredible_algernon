@@ -20,7 +20,8 @@ class CredibleCsvParser:
         'Approved Date': 'datetime',
         'DOB': 'datetime',
         ' Id': 'number',
-        'Staff ID': 'number'
+        'Staff ID': 'number',
+        'Consumer ID': 'number'
     }
 
     @classmethod

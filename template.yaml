@@ -26,14 +26,14 @@ Conditions:
   ProdDeploy: !Equals [!Ref IsDev, 'False']
 
 Resources:
-  Task:
+  GetObjectRange:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: toll_booth.handler
+      Handler: toll_booth.query_object_range_h
       Role: !ImportValue dev-worker-role-arn
       ReservedConcurrentExecutions: 1
       CodeUri: src/
-      Timeout: 600
+      Timeout: 120
       Runtime: python3.7
       Tracing: Active
       Environment:
@@ -41,120 +41,48 @@ Resources:
           STORAGE_BUCKET: !Ref StorageBucket
           LEECH_BUCKET: !Ref LeechBucket
           ALGERNON_BUCKET_NAME: !Ref AlgernonBucket
-      Events:
-        getClients:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt GetClientIds.Outputs.QueueArn
-            BatchSize: 10
-            Enabled: true
-        getClientEncounters:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt GetClientEncounters.Outputs.QueueArn
-            BatchSize: 10
-            Enabled: true
-        getClientEncounter:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt GetClientEncounter.Outputs.QueueArn
-            BatchSize: 10
-            Enabled: true
-        getPatients:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt GetPatients.Outputs.QueueArn
-            BatchSize: 10
-            Enabled: true
-        getProviders:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt GetProviders.Outputs.QueueArn
-            BatchSize: 10
-            Enabled: true
-        getEncounters:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt GetEncounters.Outputs.QueueArn
-            BatchSize: 10
-            Enabled: true
-        getCredibleObject:
-          Type: SQS
-          Properties:
-              Queue: !GetAtt GetCredibleObject.Outputs.QueueArn
-              BatchSize: 10
-              Enabled: true
-  GetClientIds:
-    Type: AWS::Serverless::Application
+  ExtractObject:
+    Type: AWS::Serverless::Function
     Properties:
-      Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:726075243133:applications/AlgernonShuckLine
-        SemanticVersion: 0.0.9
-      Parameters:
-        TaskName: "get_client_ids"
-  GetProviders:
-    Type: AWS::Serverless::Application
+      Handler: toll_booth.extract_credible_object_h
+      Role: !ImportValue dev-worker-role-arn
+      ReservedConcurrentExecutions: 1
+      CodeUri: src/
+      Timeout: 120
+      Runtime: python3.7
+      Tracing: Active
+      Environment:
+        Variables:
+          STORAGE_BUCKET: !Ref StorageBucket
+          LEECH_BUCKET: !Ref LeechBucket
+          ALGERNON_BUCKET_NAME: !Ref AlgernonBucket
+  ExtractObjects:
+    Type: AWS::Serverless::Function
     Properties:
-      Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:726075243133:applications/AlgernonShuckLine
-        SemanticVersion: 0.0.9
-      Parameters:
-        TaskName: "get_providers"
-        DeadLetterArn: !GetAtt GetClientIds.Outputs.DeadLetterArn
-        MasterKeyId: !GetAtt GetClientIds.Outputs.MasterKeyId
-  GetPatients:
-    Type: AWS::Serverless::Application
+      Handler: toll_booth.extract_credible_objects_h
+      Role: !ImportValue dev-worker-role-arn
+      ReservedConcurrentExecutions: 1
+      CodeUri: src/
+      Timeout: 240
+      Runtime: python3.7
+      Tracing: Active
+      Environment:
+        Variables:
+          STORAGE_BUCKET: !Ref StorageBucket
+          LEECH_BUCKET: !Ref LeechBucket
+          ALGERNON_BUCKET_NAME: !Ref AlgernonBucket
+  ParseExtractionBatch:
+    Type: AWS::Serverless::Function
     Properties:
-      Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:726075243133:applications/AlgernonShuckLine
-        SemanticVersion: 0.0.9
-      Parameters:
-        TaskName: "get_patients"
-        DeadLetterArn: !GetAtt GetClientIds.Outputs.DeadLetterArn
-        MasterKeyId: !GetAtt GetClientIds.Outputs.MasterKeyId
-  GetEncounters:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:726075243133:applications/AlgernonShuckLine
-        SemanticVersion: 0.0.9
-      Parameters:
-        TaskName: "get_encounters"
-        DeadLetterArn: !GetAtt GetClientIds.Outputs.DeadLetterArn
-        MasterKeyId: !GetAtt GetClientIds.Outputs.MasterKeyId
-  GetClientEncounters:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:726075243133:applications/AlgernonShuckLine
-        SemanticVersion: 0.0.9
-      Parameters:
-        TaskName: "get_client_encounter_ids"
-        DeadLetterArn: !GetAtt GetClientIds.Outputs.DeadLetterArn
-        MasterKeyId: !GetAtt GetClientIds.Outputs.MasterKeyId
-  GetClientEncounter:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:726075243133:applications/AlgernonShuckLine
-        SemanticVersion: 0.0.9
-      Parameters:
-        TaskName: "get_encounter"
-        DeadLetterArn: !GetAtt GetClientIds.Outputs.DeadLetterArn
-        MasterKeyId: !GetAtt GetClientIds.Outputs.MasterKeyId
-  GetCredibleObject:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location:
-        ApplicationId: arn:aws:serverlessrepo:us-east-1:726075243133:applications/AlgernonShuckLine
-        SemanticVersion: 0.0.9
-      Parameters:
-        TaskName: "get_credible_object"
-        DeadLetterArn: !GetAtt GetClientIds.Outputs.DeadLetterArn
-        MasterKeyId: !GetAtt GetClientIds.Outputs.MasterKeyId
-
-
-Outputs:
-  CredibleFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt Task.Arn
+      Handler: toll_booth.parse_batch_encounters
+      Role: !ImportValue dev-worker-role-arn
+      ReservedConcurrentExecutions: 1
+      CodeUri: src/
+      Timeout: 900
+      Runtime: python3.7
+      Tracing: Active
+      Environment:
+        Variables:
+          STORAGE_BUCKET: !Ref StorageBucket
+          LEECH_BUCKET: !Ref LeechBucket
+          ALGERNON_BUCKET_NAME: !Ref AlgernonBucket

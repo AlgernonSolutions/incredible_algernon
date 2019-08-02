@@ -245,6 +245,18 @@ class CredibleFrontEndDriver:
         return encounter
 
     @_login_required
+    def retrieve_client_encounters(self, encounter_ids):
+        url = _base_stem + '/visit/clientvisit_viewall.asp'
+        response = self._session.get(url, data={'clientvisit_ids': encounter_ids})
+        if response.status_code != 200:
+            raise RuntimeError(f'could not get the encounter data for {encounter_ids}, '
+                               f'response code: {response.status_code}')
+        encounters = response.text
+        if '<title>ConsumerService Multi-View</title>' not in encounters:
+            raise RuntimeError(f'something is wrong with this extracted encounters: {encounters}, do not pass it on')
+        return encounters
+
+    @_login_required
     def retrieve_client_encounter_version(self, encounter_id, version_id):
         url = _base_stem + _url_stems['ViewVersions']
         data = {

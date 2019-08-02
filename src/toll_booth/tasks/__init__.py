@@ -5,4 +5,5 @@ from toll_booth.tasks.get_providers import get_providers
 from toll_booth.tasks.get_encounters import get_encounters
 from toll_booth.tasks.get_encounter import get_encounter
 from toll_booth.tasks.get_encounter import get_encounter_text
-from toll_booth.tasks.migration import get_credible_object
+from toll_booth.tasks.migration import get_credible_object, get_credible_objects, get_credible_object_range
+from toll_booth.tasks.get_days_encounters import get_days_encounters
