@@ -2,4 +2,5 @@ retrying
 pytz
 bs4
 requests
+certifi
 moncrief>=2.0.0

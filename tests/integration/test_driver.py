@@ -5,22 +5,41 @@ import rapidjson
 import requests
 from algernon import rebuild_event
 
-from toll_booth import handler, query_object_range_h, extract_credible_objects_h, parse_batch_encounters
+from toll_booth import handler, query_object_range_h, extract_credible_objects_h, parse_batch_encounters, tasks
+from toll_booth.obj.credible_fe import CredibleFrontEndDriver
 
 
-@pytest.mark.tasks_integration
+@pytest.mark.driver_i
 @pytest.mark.usefixtures('integration_env')
-class TestTasks:
-    def test_parse_batch(self, mock_context):
-        event = {
-            "_alg_class": "StoredData",
-            "_alg_module": "algernon.aws.snakes",
-            "value": {
-                "pointer": "algernonsolutions-leech-dev#cache/f33c7af6-dc4d-4aa7-b5e5-bea98263656f!1563903684.207266.json"
-            }
-        }
-        event = rebuild_event(event)
-        results = parse_batch_encounters(event, mock_context)
+class TestDriver:
+    @pytest.mark.get_encounters_i
+    def test_get_encounters(self, mock_context):
+        id_values = [
+            "3228525",
+            "3228735",
+            "3228674",
+            "3228473",
+            "3228345",
+            "3228393",
+            "3228406",
+            "3228445",
+            "3228457",
+            "3228723",
+            "3228741",
+            "3228754",
+            "3228768",
+            "3228503",
+            "3228524",
+            "3228627",
+            "3228456",
+            "3228515",
+            "3228747",
+            "3228460",
+            "3228492"
+        ]
+        driver = CredibleFrontEndDriver('ICFS')
+        results = driver.retrieve_client_encounters(id_values)
+        assert results
 
     @pytest.mark.get_objects_i
     def test_get_objects(self, mock_context):
