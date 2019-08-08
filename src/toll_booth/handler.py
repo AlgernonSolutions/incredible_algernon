@@ -141,7 +141,7 @@ def _mark_parsing_complete(parsed_event, table_name):
             'id_value': int(parsed_event['id_value'])
         },
         UpdateExpression='SET #x=:x',
-        ExpressionAttributeNames={'#x': 'batch_parsing'},
+        ExpressionAttributeNames={'#x': 'extraction'},
         ExpressionAttributeValues={':x': {
             'completed_at': datetime.now().isoformat(),
             'stage_results': ajson.dumps(parsed_event)
