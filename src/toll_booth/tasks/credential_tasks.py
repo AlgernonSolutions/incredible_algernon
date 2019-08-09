@@ -45,7 +45,7 @@ def _construct_driver(id_source, existing_credentials: CredibleLoginCredentials)
 @xray_recorder.capture()
 def _get_credentials(id_source):
     try:
-        credentials = _download_object(os.environ['STORAGE_BUCKET'], id_source, 'credentials')
+        credentials = _download_object(os.environ['STORAGE_BUCKET_NAME'], id_source, 'credentials')
     except ClientError:
         return None
     return credentials
@@ -54,7 +54,7 @@ def _get_credentials(id_source):
 @xray_recorder.capture()
 def _push_credentials(**kwargs):
     id_source = kwargs['id_source']
-    _upload_object(os.environ['STORAGE_BUCKET'], id_source, 'credentials', kwargs['credentials'])
+    _upload_object(os.environ['STORAGE_BUCKET_NAME'], id_source, 'credentials', kwargs['credentials'])
 
 
 @xray_recorder.capture()

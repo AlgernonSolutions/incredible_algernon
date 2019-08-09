@@ -15,6 +15,28 @@ from algernon.aws import lambda_logged, StoredData, Bullhorn
 from toll_booth import tasks
 
 
+ENVIRON_VARIABLES = [
+    'ALGERNON_BUCKET_NAME',
+    'STORAGE_BUCKET_NAME',
+    'ENCOUNTER_BUCKET_NAME',
+    'GRAPH_GQL_ENDPOINT',
+    'GRAPH_DB_ENDPOINT',
+    'GRAPH_DB_READER_ENDPOINT',
+    'INDEX_TABLE_NAME',
+    'SENSITIVE_TABLE_NAME',
+    'PROGRESS_TABLE_NAME',
+    'FIRE_HOSE_NAME'
+]
+
+
+def _load_config(variable_names):
+    client = boto3.client('ssm')
+    response = client.get_parameters(Names=[x for x in variable_names])
+    results = [(x['Name'], x['Value']) for x in response['Parameters']]
+    for entry in results:
+        os.environ[entry[0]] = entry[1]
+
+
 class FireHoseEncoder(json.JSONEncoder):
     @classmethod
     def default(cls, obj):
@@ -40,30 +62,9 @@ def _lookup_resource(resource_name):
 
 
 @lambda_logged
-@queued(preserve=False)
-# @xray_recorder.capture('incredible_algernon')
-def handler(event, context):
-    logging.info(f'received a call for a credible task: {event}/{context}')
-    event = rebuild_event(event)
-    logging.info(f'started a call for a credible task, event/context: {event}/{context}')
-    task_name = event['task_name']
-    task_kwargs = event.get('task_kwargs', {})
-    id_source = task_kwargs['id_source']
-    driver = context.get('driver')
-    if driver is None:
-        driver = tasks.build_driver(id_source)
-    if driver.id_source != id_source:
-        driver = tasks.build_driver(id_source)
-    task_function = getattr(tasks, task_name)
-    results = task_function(**task_kwargs, driver=driver)
-    context['driver'] = driver
-    logging.info(f' completed a call for a credible task, event: {event}, results: {results}')
-    return results
-
-
-@lambda_logged
 def query_object_range_h(event, context):
     logging.info(f'started a call for a query_object_range task, event: {event}, context: {context}')
+    _load_config(ENVIRON_VARIABLES)
     event = rebuild_event(event['payload'])
     id_source = event['id_source']
     driver = tasks.build_driver(id_source)
@@ -81,6 +82,7 @@ def query_object_range_h(event, context):
 @lambda_logged
 def extract_credible_object_h(event, context):
     logging.info(f'started a call for a extract_credible_object task, event: {event}, context: {context}')
+    _load_config(ENVIRON_VARIABLES)
     event = rebuild_event(event['payload'])
     extracted_data = event['extracted_data']
     id_source = event['id_source']
@@ -94,6 +96,7 @@ def extract_credible_object_h(event, context):
 @lambda_logged
 def extract_credible_objects_h(event, context):
     logging.info(f'started a call for a extract_credible_objects task, event: {event}, context: {context}')
+    _load_config(ENVIRON_VARIABLES)
     event = rebuild_event(event['payload'])
     extracted_data = event['extracted_data']
     id_source = event['id_source']
@@ -106,6 +109,7 @@ def extract_credible_objects_h(event, context):
 
 @lambda_logged
 def parse_batch_encounters(event, context):
+    _load_config(ENVIRON_VARIABLES)
     migration_table_name = os.environ['MIGRATION_TABLE_NAME']
     if 'Records' in event:
         return _process_queued_parse_task(event, context)

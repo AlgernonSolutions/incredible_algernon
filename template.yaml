@@ -10,16 +10,6 @@ Parameters:
     AllowedValues:
       - 'False'
       - 'True'
-  StorageBucket:
-    Type: String
-    Description: Location to store extracted Credible data
-    Default: algernonsolutions-gentlemen-dev
-  LeechBucket:
-    Type: String
-    Description: Name of common bucket used by the application
-  AlgernonBucket:
-    Type: String
-    Description: Name of the bucket used to store cached objects
 
 Conditions:
   DevDeploy: !Equals [!Ref IsDev, 'True']
@@ -36,11 +26,6 @@ Resources:
       Timeout: 120
       Runtime: python3.7
       Tracing: Active
-      Environment:
-        Variables:
-          STORAGE_BUCKET: !Ref StorageBucket
-          LEECH_BUCKET: !Ref LeechBucket
-          ALGERNON_BUCKET_NAME: !Ref AlgernonBucket
   ExtractObject:
     Type: AWS::Serverless::Function
     Properties:
@@ -51,11 +36,6 @@ Resources:
       Timeout: 120
       Runtime: python3.7
       Tracing: Active
-      Environment:
-        Variables:
-          STORAGE_BUCKET: !Ref StorageBucket
-          LEECH_BUCKET: !Ref LeechBucket
-          ALGERNON_BUCKET_NAME: !Ref AlgernonBucket
   ExtractObjects:
     Type: AWS::Serverless::Function
     Properties:
@@ -66,11 +46,6 @@ Resources:
       Timeout: 240
       Runtime: python3.7
       Tracing: Active
-      Environment:
-        Variables:
-          STORAGE_BUCKET: !Ref StorageBucket
-          LEECH_BUCKET: !Ref LeechBucket
-          ALGERNON_BUCKET_NAME: !Ref AlgernonBucket
   ParseExtractionBatch:
     Type: AWS::Serverless::Function
     Properties:
@@ -81,8 +56,3 @@ Resources:
       Timeout: 900
       Runtime: python3.7
       Tracing: Active
-      Environment:
-        Variables:
-          STORAGE_BUCKET: !Ref StorageBucket
-          LEECH_BUCKET: !Ref LeechBucket
-          ALGERNON_BUCKET_NAME: !Ref AlgernonBucket
