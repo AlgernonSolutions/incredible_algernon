@@ -41,7 +41,7 @@ def get_credible_objects(object_type, id_values, extracted_data, driver: Credibl
     raise RuntimeError(f'get_credible_object is not equipped to retrieve object_type: {object_type}')
 
 
-@xray_recorder.capture()
+# @xray_recorder.capture()
 def get_credible_object_range(object_type, local_max, max_entries_pulled, driver: CredibleFrontEndDriver):
     id_source = driver.id_source
     if object_type == 'Encounter':

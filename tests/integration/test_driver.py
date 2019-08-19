@@ -1,4 +1,5 @@
 import csv
+import os
 
 import pytest
 import rapidjson
@@ -95,6 +96,7 @@ class TestDriver:
             },
             "local_max": 3228275
         }
+        os.environ['STORAGE_BUCKET_NAME'] = 'algernonsolutions-leech-prod'
         event = {'payload': event}
         results = query_object_range_h(event, mock_context)
         assert results

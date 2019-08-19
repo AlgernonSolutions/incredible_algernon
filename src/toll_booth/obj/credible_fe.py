@@ -94,7 +94,7 @@ class CredibleFrontEndDriver:
         if end_date:
             data['end_date'] = end_date.strftime(credible_date_format)
         logging.info(f'firing a command to url: {url} to process an advanced search: {data}')
-        response = self._session.post(url, data=data)
+        response = self._session.post(url, data=data, verify=False)
         logging.info(f'received a response a command to url: {url} with data: {data}, response: {response.content}')
         possible_objects = CredibleCsvParser.parse_csv_response(response.text)
         return possible_objects
@@ -114,7 +114,7 @@ class CredibleFrontEndDriver:
     @_login_required
     def retrieve_client_encounters(self, encounter_ids):
         url = self._base_stem + '/visit/clientvisit_viewall.asp'
-        response = self._session.get(url, data={'clientvisit_ids': encounter_ids})
+        response = self._session.get(url, data={'clientvisit_ids': encounter_ids}, verify=False)
         if response.status_code != 200:
             raise RuntimeError(f'could not get the encounter data for {encounter_ids}, '
                                f'response code: {response.status_code}')
