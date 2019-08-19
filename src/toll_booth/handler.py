@@ -88,7 +88,6 @@ def extract_credible_object_h(event, context):
     driver = tasks.build_driver(id_source)
     results = tasks.get_credible_object(event['object_type'], event['id_value'], extracted_data, driver)
     logging.info(f'completed a call for extract_credible_object task, event: {event}, results: {results}')
-    documentation = {}
     return _generate_stored_results(results)
 
 
@@ -154,7 +153,7 @@ def _mark_parsing_complete(parsed_event, table_name):
 
 def _fire_hose_parsed_events(parsed_events):
     batch = [{'Data': rapidjson.dumps(x, default=FireHoseEncoder.default).encode()} for x in parsed_events]
-    stream_name = _lookup_resource('extraction_fire_hose')
+    stream_name = os.environ['FIRE_HOSE_NAME']
     client = boto3.client('firehose')
     response = client.put_record_batch(
         DeliveryStreamName=stream_name,
