@@ -10,6 +10,9 @@ Parameters:
     AllowedValues:
       - 'False'
       - 'True'
+  WorkerRoleArn:
+    Type: String
+    Description: the role to be used for operations of the module
 
 Conditions:
   DevDeploy: !Equals [!Ref IsDev, 'True']
@@ -20,7 +23,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth.query_object_range_h
-      Role: !ImportValue dev-worker-role-arn
+      Role: !Ref WorkerRoleArn
       ReservedConcurrentExecutions: 1
       CodeUri: src/
       Timeout: 120
@@ -30,7 +33,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth.extract_credible_object_h
-      Role: !ImportValue dev-worker-role-arn
+      Role: !Ref WorkerRoleArn
       ReservedConcurrentExecutions: 1
       CodeUri: src/
       Timeout: 120
@@ -40,7 +43,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth.extract_credible_objects_h
-      Role: !ImportValue dev-worker-role-arn
+      Role: !Ref WorkerRoleArn
       ReservedConcurrentExecutions: 1
       CodeUri: src/
       Timeout: 240
@@ -50,7 +53,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth.parse_batch_encounters
-      Role: !ImportValue dev-worker-role-arn
+      Role: !Ref WorkerRoleArn
       ReservedConcurrentExecutions: 1
       CodeUri: src/
       Timeout: 900
