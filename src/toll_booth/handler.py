@@ -9,11 +9,10 @@ from multiprocessing.pool import ThreadPool
 
 import boto3
 import rapidjson
-from algernon import queued, rebuild_event, ajson
+from algernon import rebuild_event, ajson
 from algernon.aws import lambda_logged, StoredData, Bullhorn
 
 from toll_booth import tasks
-
 
 ENVIRON_VARIABLES = [
     'ALGERNON_BUCKET_NAME',
@@ -25,8 +24,7 @@ ENVIRON_VARIABLES = [
     'INDEX_TABLE_NAME',
     'SENSITIVE_TABLE_NAME',
     'PROGRESS_TABLE_NAME',
-    'FIRE_HOSE_NAME',
-    'MIGRATION_TABLE_NAME'
+    'FIRE_HOSE_NAME'
 ]
 
 
@@ -111,7 +109,7 @@ def extract_credible_objects_h(event, context):
 @lambda_logged
 def parse_batch_encounters(event, context):
     _load_config(ENVIRON_VARIABLES)
-    migration_table_name = os.environ['MIGRATION_TABLE_NAME']
+    migration_table_name = os.environ['PROGRESS_TABLE_NAME']
     if 'Records' in event:
         return _process_queued_parse_task(event, context)
     event = rebuild_event(event)
