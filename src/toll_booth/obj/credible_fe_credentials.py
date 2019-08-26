@@ -1,5 +1,6 @@
 import datetime
 
+import pytz
 import requests
 from algernon import AlgObject
 from algernon.aws import Opossum
@@ -71,7 +72,8 @@ class CredibleLoginCredentials(AlgObject):
                 website_url = login_json['WebsiteURL']
                 jar.set('SessionId', session_cookie, domain=domain_url, path='/')
                 session.get(website_url, data={'SessionId': session_cookie}, cookies=jar, verify=False)
-                return cls(id_source, domain_name, website_url, session, datetime.datetime.utcnow())
+                time_generated = datetime.datetime.now(pytz.UTC)
+                return cls(id_source, domain_name, website_url, session, time_generated)
             except KeyError or ConnectionError or IndexError:
                 attempts += 1
         raise CredibleFrontEndLoginException()
@@ -100,7 +102,7 @@ class CredibleLoginCredentials(AlgObject):
         }
 
     def is_stale(self, lifetime_minutes=30):
-        cookie_age = (datetime.datetime.utcnow() - self._time_generated).seconds
+        cookie_age = (datetime.datetime.now(pytz.UTC) - self._time_generated).seconds
         return cookie_age >= (lifetime_minutes * 60)
 
     def refresh_if_stale(self, lifetime_minutes=30, **kwargs):

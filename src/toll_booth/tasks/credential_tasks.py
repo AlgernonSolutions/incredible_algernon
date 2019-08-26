@@ -42,7 +42,7 @@ def _construct_driver(id_source, existing_credentials: CredibleLoginCredentials)
     return CredibleFrontEndDriver(id_source, credentials=existing_credentials)
 
 
-@xray_recorder.capture()
+# @xray_recorder.capture()
 def _get_credentials(id_source):
     try:
         credentials = _download_object(os.environ['STORAGE_BUCKET_NAME'], id_source, 'credentials')
@@ -51,20 +51,20 @@ def _get_credentials(id_source):
     return credentials
 
 
-@xray_recorder.capture()
+# @xray_recorder.capture()
 def _push_credentials(**kwargs):
     id_source = kwargs['id_source']
     _upload_object(os.environ['STORAGE_BUCKET_NAME'], id_source, 'credentials', kwargs['credentials'])
 
 
-@xray_recorder.capture()
+# @xray_recorder.capture()
 def _upload_object(bucket_name: str, folder_name: str, object_name: str, obj: Any):
     resource = boto3.resource('s3')
     object_key = f'{folder_name}/{object_name}'
     resource.Object(bucket_name, object_key).put(Body=ajson.dumps(obj))
 
 
-@xray_recorder.capture()
+# @xray_recorder.capture()
 def _download_object(bucket_name: str, folder_name: str, object_name: str) -> Any:
     resource = boto3.resource('s3')
     object_key = f'{folder_name}/{object_name}'
