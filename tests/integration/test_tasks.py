@@ -11,16 +11,11 @@ from toll_booth import handler, query_object_range_h, extract_credible_objects_h
 @pytest.mark.tasks_integration
 @pytest.mark.usefixtures('integration_env')
 class TestTasks:
-    def test_parse_batch(self, mock_context):
-        event = {
-            "_alg_class": "StoredData",
-            "_alg_module": "algernon.aws.snakes",
-            "value": {
-                "pointer": "algernonsolutions-leech-dev#cache/f33c7af6-dc4d-4aa7-b5e5-bea98263656f!1563903684.207266.json"
-            }
-        }
-        event = rebuild_event(event)
+    @pytest.mark.parse_batch_i
+    def test_parse_batch(self, parse_batch_event, mock_context):
+        event = rebuild_event(parse_batch_event)
         results = parse_batch_encounters(event, mock_context)
+        assert results
 
     @pytest.mark.get_objects_i
     def test_get_objects(self, mock_context):

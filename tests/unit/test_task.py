@@ -3,7 +3,7 @@ import pytest
 from toll_booth import handler
 
 
-@pytest.mark.credible_tasks
+@pytest.mark.tasks_unit
 @pytest.mark.usefixtures('dev_s3_resource')
 class TestTask:
     def test_task(self, test_task_event, mock_context, mock_bullhorn):

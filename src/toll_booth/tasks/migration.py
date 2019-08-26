@@ -81,5 +81,5 @@ def get_credible_object_range(object_type, local_max, max_entries_pulled, driver
                     'patient_dob': x['DOB']
                 },
                 'id_value': x['Service ID']
-            } for x in results]
+            } for x in results[:100]]
     raise RuntimeError(f'get_credible_object_range is not equipped to retrieve object_type: {object_type}')

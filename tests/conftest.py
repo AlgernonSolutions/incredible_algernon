@@ -10,7 +10,7 @@ import rapidjson
 
 @pytest.fixture()
 def integration_env():
-    os.environ['STORAGE_BUCKET'] = 'algernonsolutions-gentlemen-dev'
+    os.environ['STORAGE_BUCKET'] = 'algernonsolutions-leech-prod'
     os.environ['LISTENER_ARN'] = 'arn:aws:sns:us-east-1:726075243133:incredible-dev-Oyster-12S3XT8CQA6Z3-ShuckLine-6SYM0TGYEMPK-Listener-4GMTVAEB2Q7M'
 
 
@@ -69,13 +69,19 @@ def test_task_event(request):
     return _generate_queued_sns_event(params)
 
 
+@pytest.fixture
+def parse_batch_event():
+    return _read_test_event('batch_parser')
+
+
 def cheap_mock(*args):
     from unittest.mock import Mock
     return Mock, ()
 
 
 def _read_test_event(event_name):
-    with open(path.join('tests', 'test_events', f'{event_name}.json')) as json_file:
+    user_home = path.expanduser('~')
+    with open(path.join(str(user_home), '.algernon', 'incredible_algernon', f'{event_name}.json')) as json_file:
         event = json.load(json_file)
         return event
 
