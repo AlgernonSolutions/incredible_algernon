@@ -1,5 +1,4 @@
 import datetime
-from http.cookiejar import Cookie
 
 import requests
 from algernon import AlgObject
@@ -72,7 +71,7 @@ class CredibleLoginCredentials(AlgObject):
                 website_url = login_json['WebsiteURL']
                 jar.set('SessionId', session_cookie, domain=domain_url, path='/')
                 session.get(website_url, data={'SessionId': session_cookie}, cookies=jar, verify=False)
-                return cls(id_source, domain_name, website_url, session, datetime.datetime.now())
+                return cls(id_source, domain_name, website_url, session, datetime.datetime.utcnow())
             except KeyError or ConnectionError or IndexError:
                 attempts += 1
         raise CredibleFrontEndLoginException()
@@ -101,7 +100,7 @@ class CredibleLoginCredentials(AlgObject):
         }
 
     def is_stale(self, lifetime_minutes=30):
-        cookie_age = (datetime.datetime.now() - self._time_generated).seconds
+        cookie_age = (datetime.datetime.utcnow() - self._time_generated).seconds
         return cookie_age >= (lifetime_minutes * 60)
 
     def refresh_if_stale(self, lifetime_minutes=30, **kwargs):
