@@ -83,3 +83,53 @@ def get_credible_object_range(object_type, local_max, max_entries_pulled, driver
                 'id_value': x['Service ID']
             } for x in results[:99]]
     raise RuntimeError(f'get_credible_object_range is not equipped to retrieve object_type: {object_type}')
+
+
+@xray_recorder.capture()
+def get_provider_encounter_range(provider_id, driver: CredibleFrontEndDriver, start_date=None, end_date=None):
+    id_source = driver.id_source
+    search_data = {
+        'emp_id': provider_id,
+        'clientvisit_id': 1,
+        'service_type': 1,
+        'consumer_name': 1,
+        'staff_name': 1,
+        'client_int_id': 1,
+        'emp_int_id': 1,
+        'non_billable1': 3,
+        'visittype': 1,
+        'timein': 1,
+        'show_unappr': 1,
+        'data_dict_ids': [3, 4, 6, 70, 74, 83, 86, 87, 218, 641]
+    }
+    if start_date:
+        search_data.update({
+            'wh_fld1': 'cv.transfer_date',
+            'wh_cmp1': '>=',
+            'wh_val1': start_date,
+        })
+    if end_date:
+        search_data.update({
+            'wh_fld2': 'cv.transfer_date',
+            'wh_cmp2': '<=',
+            'wh_val2': end_date,
+        })
+    if start_date and end_date:
+        search_data.update({'wh_andor': 'AND'})
+    results = driver.process_advanced_search('ClientVisit', search_data)
+    return [
+        {
+            'result': {
+                'encounter_id': x['Service ID'],
+                'id_source': id_source,
+                'provider_id': x['Staff ID'],
+                'patient_id': x['Consumer ID'],
+                'encounter_type': x['Visit Type'],
+                'encounter_datetime_in': x['Time In'],
+                'encounter_datetime_out': x['Time Out'],
+                'patient_last_name': x['Last Name'],
+                'patient_first_name': x['First Name'],
+                'patient_dob': x['DOB']
+            },
+            'id_value': x['Service ID']
+        } for x in results[:99]]

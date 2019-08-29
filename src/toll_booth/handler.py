@@ -11,6 +11,7 @@ import boto3
 import rapidjson
 from algernon import rebuild_event, ajson
 from algernon.aws import lambda_logged, StoredData, Bullhorn
+from aws_xray_sdk.core import xray_recorder
 
 from toll_booth import tasks
 
@@ -61,6 +62,7 @@ def _lookup_resource(resource_name):
 
 
 @lambda_logged
+@xray_recorder.capture()
 def query_object_range_h(event, context):
     logging.info(f'started a call for a query_object_range task, event: {event}, context: {context}')
     _load_config(ENVIRON_VARIABLES)
@@ -69,7 +71,7 @@ def query_object_range_h(event, context):
     driver = tasks.build_driver(id_source)
     max_entries = event.get('max_entries', 1000)
     results = tasks.get_credible_object_range(event['object_type'], event['local_max'], max_entries, driver)
-    logging.info(f'completed a call for generate_source_vertex task, event: {event}, results: {results}')
+    logging.info(f'completed a call for query_object_range task, event: {event}, results: {results}')
     id_values = [str(x['id_value']) for x in results]
     return {
         'results': _generate_stored_results(results),
@@ -79,6 +81,7 @@ def query_object_range_h(event, context):
 
 
 @lambda_logged
+@xray_recorder.capture()
 def extract_credible_object_h(event, context):
     logging.info(f'started a call for a extract_credible_object task, event: {event}, context: {context}')
     _load_config(ENVIRON_VARIABLES)
@@ -92,6 +95,7 @@ def extract_credible_object_h(event, context):
 
 
 @lambda_logged
+@xray_recorder.capture()
 def extract_credible_objects_h(event, context):
     logging.info(f'started a call for a extract_credible_objects task, event: {event}, context: {context}')
     _load_config(ENVIRON_VARIABLES)
@@ -106,6 +110,7 @@ def extract_credible_objects_h(event, context):
 
 
 @lambda_logged
+@xray_recorder.capture()
 def parse_batch_encounters(event, context):
     _load_config(ENVIRON_VARIABLES)
     migration_table_name = os.environ['PROGRESS_TABLE_NAME']
@@ -208,7 +213,8 @@ def _parse_documents(documents):
     returned = {}
     top_page = '<title>ConsumerService Multi-View</title>'
     page_separator = "<p class='page'>"
-    encounter_pattern = re.compile(r'(Consumer)(?P<space>(&nbsp;)|(\s*))(Service)(?P=space)(ID:)((?P=space)*)(?P<encounter_id>\d*)')
+    encounter_pattern = re.compile(
+        r'(Consumer)(?P<space>(&nbsp;)|(\s*))(Service)(?P=space)(ID:)((?P=space)*)(?P<encounter_id>\d*)')
     encounter_documents = documents.split(page_separator)
     for encounter_document in encounter_documents:
         if top_page in encounter_document:

@@ -5,12 +5,18 @@ import rapidjson
 import requests
 from algernon import rebuild_event
 
-from toll_booth import handler, query_object_range_h, extract_credible_objects_h, parse_batch_encounters
+from toll_booth import handler, query_object_range_h, extract_credible_objects_h, parse_batch_encounters, query_provider_encounter_range_h
 
 
 @pytest.mark.tasks_integration
 @pytest.mark.usefixtures('integration_env')
 class TestTasks:
+    @pytest.mark.query_provider_encounters_i
+    def test_query_provider_encounters(self, mock_context):
+        event = {'id_source': 'PSI', 'provider_id': '11838', 'start_date': '08/01/2019', 'end_date': '08/08/2019'}
+        results = query_provider_encounter_range_h({'payload': event}, mock_context)
+        assert results
+
     @pytest.mark.parse_batch_i
     def test_parse_batch(self, parse_batch_event, mock_context):
         event = rebuild_event(parse_batch_event)
