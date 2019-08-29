@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 
-# @xray_recorder.capture()
+@xray_recorder.capture()
 def get_encounters(**kwargs):
     driver = kwargs['driver']
     encounter_search_data = {
